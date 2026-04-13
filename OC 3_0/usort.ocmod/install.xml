@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+	<name>uSort</name>
+	<code>usort</code>
+	<version>0.1</version>
+	<author>Andrey S</author>
+	<link>https://github.com/ASin-z01L/opencart_modules.git</link>
+  
+  <!--
+	  *
+	  * admin
+	  *
+  -->
+  
+  <!--controller-->
+  <file path="admin/controller/catalog/product.php">
+	<operation>
+      <search><![CDATA[$this->load->model('design/layout');]]></search>
+	  <add position="before"><![CDATA[
+		/*usort*/
+		if (isset($this->request->post['sort_order_in_category'])) {
+			$data['sort_order_in_category'] = $this->request->post['sort_order_in_category'];
+		} elseif (isset($this->request->get['product_id'])) {
+			$data['sort_order_in_category'] = $this->model_catalog_product->getProductSortInCategory($this->request->get['product_id']);
+		} else {
+			$data['sort_order_in_category'] = array();
+		}
+		/*usort*/]]>
+	  </add>
+    </operation>
+	<operation>
+      <search><![CDATA[$data['product_categories'] = array();]]></search>
+	  <add position="after"><![CDATA[
+	  	/*usort*/
+	  	$data['categories'] = $this->model_catalog_category->getCategories();
+			$data['product_categories_id'] = $categories;
+			/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--model-->
+  <file path="admin/model/catalog/product.php">
+	<operation>
+      <search index="0"><![CDATA[if (isset($data['product_recurring'])) {]]></search>
+	  <add position="before"><![CDATA[
+		/*usort add*/
+		if (isset($data['sort_order_in_category'])) {
+			foreach ($data['sort_order_in_category'] as $category_id => $order_category) {
+				if(!empty($order_category)){
+					$this->db->query("INSERT INTO " . DB_PREFIX . "usort SET product_id = '" . (int)$product_id . "', category_id = '" . (int)$category_id . "', sort_cat = '" . (int)$order_category . "'");
+				}
+			}
+		}
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+	<operation>
+      <search index="1"><![CDATA[if (isset($data['product_recurring'])) {]]></search>
+	  <add position="before"><![CDATA[
+		/*usort edit*/
+		$this->db->query("DELETE FROM " . DB_PREFIX . "usort WHERE product_id = " . (int)$product_id);
+			
+		if (isset($data['sort_order_in_category'])) {
+			foreach ($data['sort_order_in_category'] as $category_id => $order_category) {
+				if(!empty($order_category)){
+					$this->db->query("INSERT INTO " . DB_PREFIX . "usort SET product_id = '" . (int)$product_id . "', category_id = '" . (int)$category_id . "', sort_cat = '" . (int)$order_category . "'");
+				}
+			}
+		}
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+	<operation>
+      <search><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "coupon_product WHERE product_id = '" . (int)$product_id . "'");]]></search>
+	  <add position="after"><![CDATA[
+			/*usort del*/
+			$this->db->query("DELETE FROM " . DB_PREFIX . "usort WHERE product_id = '" . (int)$product_id . "'");
+			/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+	<operation>
+      <search><![CDATA[public function getProductImages($product_id) {]]></search>
+	  <add position="before"><![CDATA[
+		/*usort*/
+		public function getProductSortInCategory($product_id) {
+			$product_sort_data = Array();
+				
+			$query = $this->db->query("SELECT u.category_id, u.sort_cat FROM " . DB_PREFIX . "usort u WHERE u.product_id = '" . (int)$product_id . "'");
+
+			foreach ($query->rows as $result) {
+				$product_sort_data[$result['category_id']] = $result['sort_cat'];
+			}
+				
+			return $product_sort_data;
+		}
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  <file path="admin/model/catalog/category.php">
+	<operation>
+      <search><![CDATA[$this->db->query("DELETE FROM " . DB_PREFIX . "coupon_category WHERE category_id = '" . (int)$category_id . "'");]]></search>
+	  <add position="after"><![CDATA[
+		/*usort*/
+		$this->db->query("DELETE FROM " . DB_PREFIX . "usort WHERE category_id = '" . (int)$category_id . "'");
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--language-->
+  <file path="admin/language/{russian,ru,ru-ru}/catalog/product.php">
+	<operation>
+      <search><![CDATA[$_['entry_recurring']]]></search>
+	  <add position="after"><![CDATA[
+	/*usort*/
+	$_['entry_sort_column_name']    = 'Сортировка';
+	$_['entry_cat_column_name']     = 'Категория';
+	$_['entry_sort_order_category'] = 'Порядок сортировки в категориях';
+	$_['text_view_product'] = 'В которых показан продукт';
+	$_['text_all_category'] = 'Все категории';
+	/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <file path="admin/language/{english,en-gb,en-us}/catalog/product.php">
+	<operation>
+      <search><![CDATA[$_['entry_recurring']]]></search>
+	  <add position="after"><![CDATA[
+	/*usort*/
+	$_['entry_sort_column_name'] = 'Sort';
+	$_['entry_cat_column_name']  = 'Category';
+	$_['entry_sort_order_category']  = 'Sort order in category';
+	$_['text_view_product'] = 'Product shown';
+	$_['text_all_category'] = 'All category';
+	/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--view-->
+  <file path="admin/view/template/catalog/product_form.twig">
+	<operation>
+      <search><![CDATA[<div class="tab-pane" id="tab-links">]]></search>
+	  <add position="before" offset="1"><![CDATA[
+			<!--usort-->
+			<div class="form-group">
+                <label class="col-sm-2 control-label" for="input-category">{{ entry_sort_order_category }}</label>
+                <div class="col-sm-10">
+                  <div class="well well-sm" style="min-height: 150px;max-height: 300px;overflow: auto;">
+                    <table class="table table-striped">
+					<tr>
+						<th style="width:15%">{{ entry_sort_column_name }}</th>
+						<th>{{ entry_cat_column_name }}</th>
+					</tr>
+                    {% for category in categories %}
+                    <tr {% if category.category_id not in product_categories_id %} class="no-view-cat" {% endif %}>
+					  <td>
+						  <input type="text" name="sort_order_in_category[{{ category.category_id }}]" style="width:35px" pattern="[-0-9]+" inputmode="numeric" value="{{ (sort_order_in_category[category.category_id]) ? sort_order_in_category[category.category_id] : '' }}" />
+					  </td>
+                      <td>
+                          {{ category.name }}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                    </table>
+                  </div>
+				  <a onclick="$(this).parent().find('.no-view-cat').css('display', 'none');">{{ text_view_product }}</a> / <a onclick="$(this).parent().find('.no-view-cat').css('display', 'table-row');">{{ text_all_category }}</a>
+				</div>
+            </div>
+			<!--usort-->
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--
+	  *
+	  * catalog
+	  *
+  -->
+  
+  <!--controller-->
+  <file path="catalog/controller/product/category.php">
+	<operation>
+      <search><![CDATA[$category_info = $this->model_catalog_category->getCategory($category_id);]]></search>
+	  <add position="before"><![CDATA[
+		/*usort*/
+		if(!isset($this->request->get['sort']) && !isset($this->request->get['order'])){
+			$sortInCategory = $this->config->get('usort_sort_in_category');
+			if(isset($sortInCategory[$category_id])){
+				list($sort, $order) = explode(';', $sortInCategory[$category_id]);
+			}
+		}
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+	<operation>
+      <search><![CDATA['value' => 'p.model-DESC',]]></search>
+	  <add position="after" offset="2"><![CDATA[
+		/*usort*/
+		$data['sorts'][] = array(
+			'text'  => $this->language->get('text_sort_cat_asc'),
+			'value' => 'us.sort_cat-ASC',
+			'href'  => $this->url->link('product/category', 'path=' . $this->request->get['path'] . '&sort=us.sort_cat&order=ASC' . $url)
+		);
+		/*usort*/
+	  ]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--model-->
+  <file path="catalog/model/catalog/product.php">
+	<operation>
+      <search><![CDATA['p.sort_order',]]></search>
+	  <add position="after">
+	  <![CDATA['us.sort_cat', //usort]]>
+	  </add>
+    </operation>
+	<operation>
+      <search index="0"><![CDATA[$sql .= " LEFT JOIN " . DB_PREFIX . "product p ON (p2c.product_id = p.product_id)";]]></search>
+	  <add position="after">
+	  <![CDATA[			
+		/*usort*/
+			if (isset($data['sort']) && $data['sort'] == 'us.sort_cat'){
+				$sql .= " LEFT JOIN (SELECT * FROM " . DB_PREFIX . "usort u WHERE u.category_id = '" . (int)$data['filter_category_id'] . "') AS us ON (p.product_id = us.product_id)";
+			}
+		/*usort*/]]>
+	  </add>
+    </operation>
+	<operation>
+      <search><![CDATA[} elseif ($data['sort'] == 'p.price') {]]></search>
+	  <add position="before">
+	  <![CDATA[			/*usort*/
+			} elseif ($data['sort'] == 'us.sort_cat') {
+				if (isset($data['order']) && ($data['order'] == 'ASC')) {
+					$sql .= " ORDER BY IFNULL(us.sort_cat, (SELECT MAX(us.sort_cat) FROM " . DB_PREFIX . "usort us) + 1)";
+				}
+				if (isset($data['order']) && ($data['order'] == 'DESC')) {
+					$sql .= " ORDER BY IFNULL(us.sort_cat, (SELECT MIN(us.sort_cat) FROM " . DB_PREFIX . "usort us) - 1)";
+				}
+			/*usort*/]]>
+	  </add>
+    </operation>
+  </file>
+  
+  <!--language-->
+  <file path="catalog/language/{russian,ru,ru-ru}/product/category.php">
+	<operation>
+      <search><![CDATA[$_['text_limit']]]></search>
+	  <add position="after"><![CDATA[$_['text_sort_cat_asc']    = 'По индексу (в категории)'; //usort]]>
+	  </add>
+    </operation>
+  </file>
+
+	<file path="catalog/language/{english,en-gb,en-us}/product/category.php">
+		<operation>
+			<search><![CDATA[$_['text_limit']]]></search>
+			<add position="after"><![CDATA[$_['text_sort_cat_asc']    = 'By index (in category)'; //usort]]>
+			</add>
+		</operation>
+	</file>
+</modification>
