@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>Shortcodes</name>
+    <code>shortcodes</code>
+    <version>0.1</version>
+    <author>Andrey S</author>
+    <link>https://github.com/ASin-z01L/opencart_modules.git</link>
+
+    <!--
+      *
+      * catalog
+      *
+    -->
+
+    <!--controller-->
+    <file path="catalog/controller/common/column_right.php">
+        <operation>
+            <search><![CDATA[$setting_info = $this->model_extension_module->getModule($part[1]);]]></search>
+            <add position="after" trim="true"><![CDATA[
+	        /*shortcodes*/
+	        if(strpos($setting_info["name"], 'sc_') !== false) { continue; }
+	        /*shortcodes*/
+        ]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/product/category.php">
+        <operation>
+            <search><![CDATA[$data['compare'] = $this->url->link('product/compare');]]></search>
+            <add position="after" trim="true" offset="1"><![CDATA[
+			/*shortcodes*/
+			if(mb_strpos($data['description'], '[sc_') !== false) {
+				$data['description'] = $this->load->controller('extension/module/shortcodes/shortcodesReplace', Array($data['description'], $category_id, 'category'));
+			}
+			/*shortcodes*/
+	  ]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search>
+                <![CDATA[$data['description'] = html_entity_decode($product_info['description'], ENT_QUOTES, 'UTF-8');]]></search>
+            <add position="after" trim="true" offset="1"><![CDATA[
+			/*shortcodes*/
+			if(mb_strpos($data['description'], '[sc_') !== false) {
+				$data['description'] = $this->load->controller('extension/module/shortcodes/shortcodesReplace', Array($data['description'], $product_id, 'product'));
+			}
+			/*shortcodes*/
+	    ]]>
+            </add>
+        </operation>
+    </file>
+
+    <file path="catalog/controller/information/information.php">
+        <operation>
+            <search>
+                <![CDATA[$data['description'] = html_entity_decode($information_info['description'], ENT_QUOTES, 'UTF-8');]]></search>
+            <add position="after" trim="true" offset="1"><![CDATA[
+			/*shortcodes*/
+			if(mb_strpos($data['description'], '[sc_') !== false) {
+				$data['description'] = $this->load->controller('extension/module/shortcodes/shortcodesReplace', Array($data['description'], $information_id, 'information'));
+			}
+			/*shortcodes*/
+	  ]]>
+            </add>
+        </operation>
+    </file>
+
+    <!--model-->
+    <file path="catalog/model/catalog/category.php">
+        <operation>
+            <search><![CDATA[class ModelCatalogCategory extends Model {]]></search>
+            <add position="after" trim="true"><![CDATA[
+			  /*shortcodes*/
+			  public function getIdModuleCategory($categoryId) { 
+				$query = $this->db->query("SELECT DISTINCT lm.code FROM " . DB_PREFIX . "layout_module lm LEFT JOIN " . DB_PREFIX . "category_to_layout ctl ON ctl.layout_id = lm.layout_id WHERE ctl.category_id = '" . (int)$categoryId . "' AND lm.position = 'column_right' AND (lm.code LIKE 'html%' OR lm.code LIKE 'banner%')");
+
+				if ($query->num_rows) {
+					$moduleId = Array();
+					
+					foreach ($query->rows as $module) {
+						list($type, $id) = explode('.', $module["code"]);
+						$moduleId[] = $id;
+					}
+							
+					return $moduleId;
+					
+				} else {
+					return false;
+				}
+			}
+			/*shortcodes*/
+	  ]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/catalog/product.php">
+        <operation>
+            <search><![CDATA[class ModelCatalogProduct extends Model {]]></search>
+            <add position="after" trim="true"><![CDATA[
+			  /*shortcodes*/
+			  public function getIdModuleProduct($productId) {
+				$query = $this->db->query("SELECT DISTINCT lm.code FROM " . DB_PREFIX . "layout_module lm LEFT JOIN " . DB_PREFIX . "product_to_layout ptl ON ptl.layout_id = lm.layout_id WHERE ptl.product_id = '" . (int)$productId . "' AND lm.position = 'column_right' AND (lm.code LIKE 'html%' OR lm.code LIKE 'banner%')");
+				
+				if ($query->num_rows) {
+					$moduleId = Array();
+					
+					foreach ($query->rows as $module) {
+						list($type, $id) = explode('.', $module["code"]);
+						$moduleId[] = $id;
+					}
+							
+					return $moduleId;
+					
+				} else {
+					return false;
+				}
+			}
+			/*shortcodes*/
+	  ]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/catalog/information.php">
+        <operation>
+            <search><![CDATA[class ModelCatalogInformation extends Model {]]></search>
+            <add position="after" trim="true"><![CDATA[
+			  /*shortcodes*/
+			  public function getIdModuleInformation($informationId) {
+				$query = $this->db->query("SELECT DISTINCT lm.code FROM " . DB_PREFIX . "layout_module lm LEFT JOIN " . DB_PREFIX . "information_to_layout itl ON itl.layout_id = lm.layout_id WHERE itl.information_id = '" . (int)$informationId . "' AND lm.position = 'column_right' AND (lm.code LIKE 'html%' OR lm.code LIKE 'banner%')");
+				
+				if ($query->num_rows) {
+					$moduleId = Array();
+					
+					foreach ($query->rows as $module) {
+						list($type, $id) = explode('.', $module["code"]);
+						$moduleId[] = $id;
+					}
+							
+					return $moduleId;
+					
+				} else {
+					return false;
+				}
+			}
+			/*shortcodes*/
+	  ]]></add>
+        </operation>
+    </file>
+
+    <file path="catalog/model/extension/module.php">
+        <operation>
+            <search><![CDATA[class ModelExtensionModule extends Model {]]></search>
+            <add position="after" trim="true"><![CDATA[
+			  /*shortcodes*/
+			  public function getShortcodesContent($moduleIdList) {
+				$moduleIdListStr = implode(",", $moduleIdList);
+				
+				$query = $this->db->query("SELECT md.setting FROM " . DB_PREFIX . "module md WHERE md.module_id IN (" . $this->db->escape($moduleIdListStr) . ") AND md.name LIKE 'sc_%' AND (md.code = 'html' OR md.code = 'banner')");
+				
+				$moduleData = Array();
+				
+				if ($query->num_rows) {	 
+				
+					foreach($query->rows as $item) {$moduleData[] = $item['setting'];}
+					return $moduleData;
+					
+				} else {
+					return false;
+				}
+			}
+			/*shortcodes*/
+	    ]]></add>
+        </operation>
+    </file>
+
+</modification>
