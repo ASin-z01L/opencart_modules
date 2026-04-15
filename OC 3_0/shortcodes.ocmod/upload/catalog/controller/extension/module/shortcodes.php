@@ -46,8 +46,14 @@ class ControllerExtensionModuleShortcodes extends Controller
                             $shortcodesOut[$shortcodesListArray['name']]['html'] =
                                 $this->load->controller('extension/module/banner', $shortcodesListArray);
                         } else {
-                            $shortcodesOut[$shortcodesListArray['name']]['html'] =
-                                html_entity_decode($shortcodesListArray['module_description'][1]['description'], ENT_QUOTES, 'UTF-8');
+                            $languageId = (int)$this->config->get('config_language_id');
+
+                            if (isset($shortcodesListArray['module_description'][$languageId])) {
+
+                                $shortcodesOut[$shortcodesListArray['name']]['html'] =
+                                    html_entity_decode($shortcodesListArray['module_description'][$languageId]['description'], ENT_QUOTES, 'UTF-8');
+
+                            }
                         }
                     }
                 }
@@ -59,8 +65,6 @@ class ControllerExtensionModuleShortcodes extends Controller
         }
 
         // Remove shortcodes if module are not found
-        $description = preg_replace('/\[sc_(.*?)\]/ui', '', $description);
-
-        return $description;
+        return preg_replace('/\[sc_(.*?)]/ui', '', $description);
     }
 }
